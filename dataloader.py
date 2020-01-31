@@ -40,8 +40,10 @@ class DataLoader():
             data_image = Image.open(self.data_files[current-1])
             label_image = Image.open(self.label_files[current-1])
             
+            data_image = np.array(data_image)
+            label_image = np.array(label_image)
             
-            
+            data_image /= max(data_image)
 
             yield (data_image, label_image)
 

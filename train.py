@@ -43,12 +43,19 @@ def train_net(net,
 
         for i, (img, label) in enumerate(loader):
             shape = img.shape
-            # todo: create image tensor: (N,C,H,W) - (batch size=1,channels=1,height,width)
+            # todo: create image tensor: (N,C,H,W) - (batch size=1,channels=1,height,width) 1,1,h,w
+            image = torch.tensor(img)
+            image = image.resize_((1, 1, image.size(0), image.size(1)))
 
             # todo: load image tensor to gpu
             #if gpu:
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            image.device(device)
 
             # todo: get prediction and getLoss()
+            
+            pred_label = UNet(image)
+            loss = getLoss(pred_label, label)
 
             epoch_loss += loss.item()
  
@@ -97,7 +104,9 @@ def softmax(input):
 def cross_entropy(input, targets):
     # todo: implement cross entropy
     # Hint: use the choose function
-    ce = -1 * torch.sum(targets * torch.log(input))
+    
+    M = input.size(0) * input.size(1)
+    ce = -1 * torch.sum(targets * torch.log(input))/M
 
     return ce
 
