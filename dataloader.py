@@ -43,7 +43,10 @@ class DataLoader():
             data_image = np.array(data_image)
             label_image = np.array(label_image)
             
-            data_image /= max(data_image)
+            #print(len(data_image))
+            #print(max(data_image))
+            
+            data_image = data_image / np.max(data_image)
 
             yield (data_image, label_image)
 

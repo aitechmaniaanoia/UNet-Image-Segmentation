@@ -43,18 +43,32 @@ def train_net(net,
 
         for i, (img, label) in enumerate(loader):
             shape = img.shape
+            #print(shape)
+            
             # todo: create image tensor: (N,C,H,W) - (batch size=1,channels=1,height,width) 1,1,h,w
             image = torch.tensor(img)
-            image = image.resize_((1, 1, image.size(0), image.size(1)))
-
+            # = image.resize_((1, 1, image.size(0), image.size(1)))
+            
+            image = image.resize_((1, 1, 256, 256))
+            #print(image.size())
             # todo: load image tensor to gpu
             #if gpu:
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-            image.device(device)
+            print(device)
+            image.to(device = device, dtype=torch.float32)
 
             # todo: get prediction and getLoss()
             
-            pred_label = UNet(image)
+            pred_label = net(image.float()) 
+            label = torch.tensor(label)
+
+            pred_label = pred_label.reshape((pred_label.size(1), pred_label.size(2), pred_label.size(3)))
+            label = label.resize_(256,256)
+            label = label.reshape((1, label.size(0), label.size(1)))
+            
+            #print(pred_label.size()) # torch.Size([2, 256, 256])       
+            #print(label.size()) #torch.Size([1, 256, 256])
+            
             loss = getLoss(pred_label, label)
 
             epoch_loss += loss.item()
@@ -90,13 +104,15 @@ def train_net(net,
 
 def getLoss(pred_label, target_label):
     p = softmax(pred_label)
+    #print(p.size())
     return cross_entropy(p, target_label)
 
 def softmax(input):
     # todo: implement softmax function
+    #input = input.resize_((2, input.size(2), input.size(3)))
     exp = torch.exp(input)
-    sum_exp = torch.sum(exp,2)
-    sum_exp = sum_exp.resize_((sum_exp.size(0), sum_exp.size(1), 1))
+    sum_exp = torch.sum(exp,0)
+    #sum_exp = sum_exp.resize_((1, 1, sum_exp.size(1), sum_exp.size(2)))
     p = exp/sum_exp
     
     return p
@@ -105,7 +121,12 @@ def cross_entropy(input, targets):
     # todo: implement cross entropy
     # Hint: use the choose function
     
-    M = input.size(0) * input.size(1)
+    ## input [1,2,h,w]
+    ## targets [h,w]
+    #targets = torch.tensor(targets)
+    #targets = targets.resize_((1, targets.size(0), targets.size(1)))
+    
+    M = input.size(1) * input.size(2)
     ce = -1 * torch.sum(targets * torch.log(input))/M
 
     return ce
