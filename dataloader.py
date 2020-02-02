@@ -4,7 +4,7 @@ from os.path import isdir, exists, abspath, join
 import random
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps, ImageEnhance
 
 class DataLoader():
     def __init__(self, root_dir='data/cells', batch_size=2, test_percent=.1):
@@ -40,15 +40,51 @@ class DataLoader():
             data_image = Image.open(self.data_files[current-1])
             label_image = Image.open(self.label_files[current-1])
             
+            #enh_con = ImageEnhance.Contrast(data_image)
+            #contrast = 1.5
+            #data_image = enh_con.enhance(contrast)
+            data_image = ImageOps.equalize(data_image)     
+            
+            size = 512, 512
+            
+            if self.mode == 'train':
+            
+                data_image.thumbnail(size, Image.ANTIALIAS)
+                label_image.thumbnail(size, Image.ANTIALIAS)
+            
+            ### DATA AUGMENTATION
+            aug = np.random.randint(0,2,size = 1)
+            
+            if aug == 0: # flip
+                data_new = ImageOps.mirror(data_image)
+                label_new = ImageOps.mirror(label_image)
+                
+            elif aug == 1: # rotate
+                data_new = data_image.rotate(90)
+                label_new = label_image.rotate(90)
+                
+            elif aug == 2: # Zoom
+                #w,h = data_image.size
+                data_new = data_image.crop((5,5,size[0]-5,size[1]-5))
+                label_new = label_image.crop((5,5,size[0]-5,size[1]-5))
+                
+                data_new = data_new.resize(size)
+                label_new = label_new.resize(size)
+            
             data_image = np.array(data_image)
             label_image = np.array(label_image)
             
-            #print(len(data_image))
-            #print(max(data_image))
-            
             data_image = data_image / np.max(data_image)
-
+            #data_image = data_image / 255
+            
+            data_new = np.array(data_new)
+            label_new = np.array(label_new)
+            
+            data_new = data_new / np.max(data_new)
+            #data_new = data_new / 255
+            
             yield (data_image, label_image)
+            yield (data_new, label_new)
 
     def setMode(self, mode):
         self.mode = mode
